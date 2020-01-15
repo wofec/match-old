@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" href="files/style/style.css">
+</head>
+<body>
+	<div class="disabled"></div>
+	<header>
+		<a class="menu-btn new-game-btn">NEW GAME</a>
+		<a class="menu-btn records-btn">RECORDS</a>
+	</header>
+	<main class="main-flexbox">
+		<div class="registration">
+			<label for="name">YOUR FIRST NAME</label>
+			<input class="input" type="text" id="name">
+			<label for="name">YOUR LAST NAME</label>
+			<input class="input" type="text" id="lastname">
+			<label for="name">YOUR E-MAIL</label>
+			<input class="input" type="text" id="mail">
+			
+			<a class="menu-btn start-btn">START GAME</a>
+		</div>
+
+
+		<div class="records-table">
+			<div class="player-score">
+				<span>NAME</span>
+				<span>SCORE</span>
+			</div>
+			<div class="records-notes">
+				no records to display
+			</div>
+			<a class="menu-btn close-records-btn">CLOSE</a>
+		</div>
+		<div class="rules"><h1>How to play</h1><br><br>
+		Select two cards to try to match the picture.<br><br>
+		If you match the pictures you can go again.<br><br>
+		If they don't match it is the computer turn them.<br><br>
+		The player that finds all pairs wins!<br><br>
+		Good Luck & Have Fun!
+		</div>
+		<div class="new-game">
+			ARE YOU SURE?
+			<div>
+				<a class="menu-btn yes-btn">YES</a>
+				<a class="menu-btn no-btn">NO</a>
+			</div>			
+		</div>
+	</main>
+	<footer></footer>
+	<script src="files/js/script.js"></script>
+</body>
+</html>
