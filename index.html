@@ -6,21 +6,26 @@
 	<link rel="stylesheet" href="files/style/style.css">
 </head>
 <body>
-	<div class="disabled"></div>
+	<div id="disabled"></div>
 	<header>
-		<a class="menu-btn new-game-btn">NEW GAME</a>
+		<a id="new-game-button" class="menu-btn new-game-btn">NEW GAME</a>
 		<a class="menu-btn records-btn">RECORDS</a>
 	</header>
 	<main class="main-flexbox">
-		<div class="registration">
-			<label for="name">YOUR FIRST NAME</label>
-			<input class="input" type="text" id="name">
-			<label for="name">YOUR LAST NAME</label>
-			<input class="input" type="text" id="lastname">
-			<label for="name">YOUR E-MAIL</label>
-			<input class="input" type="text" id="mail">
-			
-			<a class="menu-btn start-btn">START GAME</a>
+		<div id="modal">
+      <div>
+        <h1 id="modal-header">Введите ваше имя</h1>
+      </div>
+      <div id="login-wrapper">
+        <input class="input" type="text" id="login">
+      </div>
+      <div id="modal-content">
+
+      </div>
+      <div class="buttons-wrapper">
+        <a id="close-button" class="menu-btn">Закрыть</a>
+        <a id="accept-button" class="menu-btn">Начать игру</a>
+      </div>
 		</div>
 
 

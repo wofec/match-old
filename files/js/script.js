@@ -1,333 +1,372 @@
-"use strict";
+//prepare data block
+const gameElements = {
+  modal: document.querySelector('#modal'),
+  disabled: document.querySelector("#disabled"),
+  newGameButton: document.querySelector("#new-game-button"),
+  acceptButton: document.querySelector("#accept-button"),
+  closeButton: document.querySelector("#close-button"),
+  loginWrapper: document.querySelector("#login-wrapper"),
+  nameInput: document.querySelector("#login"),
+  modalHeader: document.querySelector("#modal-header"),
+  modalContent: document.querySelector("#modal-content"),
+}
 
-addEventListener("click", function(event) {
-    switch (event.target.className) {
-    	case 'menu-btn records-btn': 		
-    		openRecords();
-    		break;
+const GAME_STATE_PREPARE = 'GAME_STATE_PREPARE';
+const GAME_STATE_LOGIN = 'GAME_STATE_LOGIN';
+const GAME_STATE_NONE = 'GAME_STATE_NONE';
+const GAME_STATE_CHOOSE_CARD_SHIRT = 'GAME_STATE_CHOOSE_CARD_SHIRT';
+const GAME_STATE_CHOOSE_DIFFICULT = 'GAME_STATE_CHOOSE_DIFFICULT';
 
-    	case 'menu-btn new-game-btn': 			
-    		newGame();
-    		break;
+const cardShirts = ['card-shirt1', 'card-shirt2', 'card-shirt3'];
+const cardsQuantity = [10, 20, 30];
 
-    	case 'menu-btn close-records-btn': 		
-    		closeRecords();
-    		break;
+const headerMessages = {
+  loginStage: 'Введите ваше имя',
+  cardShirtStage: 'Выберите рубашку карточек',
+  cardsQuantityStage: 'Выберите количество карточек',
+}
 
-    	case 'menu-btn accept-btn': 			
-    		acceptButton();
-    		break;
+const gameData = {
+  gameIsActive: false,
+  player: {
+    name: localStorage.getItem('mmg_player'),
+  },
+  gameState: GAME_STATE_NONE,
+  cardShirt: null,
+  cardsQuantity: null,
+}
 
-    	case 'menu-btn yes-btn': 				
-    		// document.location.reload();
-    		startGame();
-    		document.querySelector(".disabled").style.display = "none";
-			document.querySelector(".new-game").style.display = "none";
-    		break;
+// init block
+gameElements.newGameButton.addEventListener("click", actionController);
+gameElements.acceptButton.addEventListener("click", actionController);
+gameElements.closeButton.addEventListener("click", hideModal);
 
-    	case 'menu-btn no-btn': 				
-    		closeNewGame();
-    		break;
+function checkPlayer() {
+  if (gameData.player.name) {
+    chooseCardShirt();
+  } else {
+    gameData.gameState = GAME_STATE_LOGIN;
+    regNewPlayer();
+  }
+  showModal();
+}
 
-    	case 'menu-btn start-btn': 				
-    		finishRegistration();
-    		break;
+function showModal() {
+  disabled.style.display = "block";
+  modal.style.display = "flex";
+}
+
+function hideModal() {
+  disabled.style.display = "none";
+  modal.style.display = "none";
+  gameData.gameState = GAME_STATE_NONE;
+  gameElements.modalContent.innerHTML = '';
+}
+
+function actionController({target}) {
+  switch(gameData.gameState){
+    case GAME_STATE_NONE: {
+      checkPlayer();
+      break;
     }
 
-    switch (event.target.getAttribute('data-select')) { 		
-    	case 'no':
-    	chooseCardShirt();
-    	break;
+    case GAME_STATE_LOGIN: {
+      loginUser();
+      break;
     }
 
-    switch (event.target.getAttribute('data-quant')) { 			
-    	case 'no':
-    	chooseQuantity();
-    	break;
+    case GAME_STATE_CHOOSE_CARD_SHIRT: {
+      chooseDifficult(target);
+      break;
     }
 
-    switch (event.target.getAttribute('data-flip')) { 			
-    	case 'no':
-    	flipCard();
-    	break;
+    case GAME_STATE_CHOOSE_DIFFICULT: {
+      renderContent(target);
+      break;
     }
- });
 
-var gameIsActive = false;
-	
-function newGame() {											//new game
-	if (gameIsActive === false) {								
-		gameIsActive = true;
-		startGame();											
-	} else {
-		document.querySelector(".disabled").style.display = "block"; 		//reload game
-		document.querySelector(".new-game").style.display = "block";
-	}
+    case GAME_STATE_IN_PROGRESS: {
+      break;
+    }
+
+    default:
+      break;
+  } 
 }
 
-var playerName = "";
-var playerScore = 0;
-var playerEmail = "";
-
-function startGame() { 														//check user
-	if (localStorage.getItem('player') != null) {							
-		playerName = localStorage['player'];
-		console.log(playerName);
-		document.querySelector(".registration").style.display = "none";
-		document.querySelector(".disabled").style.display = "none";
-		document.querySelector(".rules").innerHTML = " ";
-		createChoseCardShirt();												
-	} else {
-		startRegistration()													
-	}
+function regNewPlayer() {
+  gameElements.loginWrapper.style.display = 'flex';
+  gameElements.acceptButton.style.display = 'flex';
+  gameElements.modalHeader.innerHTML = headerMessages.loginStage;
 }
 
-function startRegistration() {												//open registration
-	document.querySelector(".registration").style.display = "flex";
-	document.querySelector(".disabled").style.display = "block";
+function loginUser() {
+  const name = gameElements.nameInput.value;
+
+  if (!name.length) {
+    return;
+  }
+  localStorage.setItem('mmg_player', name);
+  gameData.player.name = name;
+  chooseCardShirt();
 }
 
+function chooseCardShirt() {
+  gameData.gameState = GAME_STATE_CHOOSE_CARD_SHIRT;
 
-function finishRegistration() { 											//form validation
-	if (document.querySelector('#name').value == "" || document.querySelector('#lastname').value == "" 
-		|| document.querySelector('#mail').value == "") {
-		alert("Please, fill in form fields.");
-	} else {
-		playerName = document.querySelector('#name').value + " " + document.querySelector('#lastname').value;
-		document.querySelector(".registration").style.display = "none";
-		document.querySelector(".disabled").style.display = "none";
-		document.querySelector(".rules").innerHTML = " ";
-		createChoseCardShirt();												
-	}	
+  gameElements.loginWrapper.style.display = 'none';
+  gameElements.acceptButton.style.display = 'none';
+  gameElements.modalHeader.innerHTML = headerMessages.cardShirtStage;
+
+  cardShirts.forEach((item, index) => 
+    gameElements.modalContent.appendChild(
+      generateCard({
+        extraClass: item, 
+        id: index,
+      })
+  ));
 }
 
-function openRecords() {													//open a table of records
-	document.querySelector(".records-table").style.display = "flex";
-	document.querySelector(".disabled").style.display = "block";
+function chooseDifficult({dataset}) {
+  gameData.cardShirt = cardShirts[dataset.id];
+  gameData.gameState = GAME_STATE_CHOOSE_DIFFICULT;
+
+  gameElements.modalHeader.innerHTML = headerMessages.cardsQuantityStage;
+  gameElements.modalContent.innerHTML = '';
+
+  cardsQuantity.forEach((item, index) => {
+    gameElements.modalContent.appendChild(generateCard({quantity: item, id: index}));
+  });
 }
 
-function closeRecords() {													//close a table of records
-	document.querySelector(".records-table").style.display = "none";
-	document.querySelector(".disabled").style.display = "none";
+function renderContent({dataset}) {
+  hideModal();
+  gameData.cardsQuantity = cardsQuantity[dataset.id];
+  gameData.gameState = GAME_STATE_CHOOSE_DIFFICULT;
 }
 
-function closeNewGame() {													//close a menu of reload game
-	document.querySelector(".new-game").style.display = "none";
-	document.querySelector(".disabled").style.display = "none";
+function generateCard(options) {
+  const template = `<div class="card ${options.extraClass}" data-id="${options.id}">${options.quantity}</div>`;
+  const card = document.createElement('div');
+  card.innerHTML = template;
+  card.addEventListener('click', actionController);
+  return card;
 }
 
-var scoreTable = [];
-
-
-function createChoseCardShirt() {											
-	document.querySelector(".rules").style.display = "flex";
-	document.querySelector(".rules").style.justifyContent = "space-between";
-	document.querySelector(".rules").style.flexWrap = "wrap";
-
-	var elem = document.createElement('A');
-	document.querySelector('.rules').appendChild(elem);
-	elem.classList.add('card','card-shirt1');
-	elem.setAttribute('data-select', 'yes');
-
-	var elem = document.createElement('A');
-	document.querySelector('.rules').appendChild(elem);
-	elem.classList.add('card','card-shirt2');
-	elem.setAttribute('data-select', 'no');
-
-	var elem = document.createElement('A');
-	document.querySelector('.rules').appendChild(elem);
-	elem.classList.add('card','card-shirt3');
-	elem.setAttribute('data-select', 'no');
-
-	var elem = document.createElement('DIV');
-	document.querySelector('.rules').appendChild(elem);
-	elem.classList.add('option-text');
-	elem.innerHTML = "Choose style shirt for your cards";
-
-	var elem = document.createElement('A');
-	document.querySelector('.rules').appendChild(elem);
-	elem.classList.add('menu-btn','accept-btn');
-	document.querySelector(".accept-btn").innerHTML = "ACCEPT";
-	document.querySelector(".accept-btn").style.alignSelf = "flex-end";
+function generateUniqId() {
+  return `mmg${(~~(Math.random()*1e8)).toString(16)}`;
 }
+// var scoreTable = [];
 
-var selectedCardShirt = 'card card-shirt1';
-var selectedQuantity = 'quantity quantity1';
+// function createChoseCardShirt() {
+//     document.querySelector(".rules").style.display = "flex";
+//     document.querySelector(".rules").style.justifyContent = "space-between";
+//     document.querySelector(".rules").style.flexWrap = "wrap";
 
-function chooseCardShirt() {											//select the shirt of cards
-	document.querySelector("[data-select = 'yes']").dataset.select = "no";
-	event.target.dataset.select = "yes";
-	selectedCardShirt = document.querySelector("[data-select = 'yes']").className;
-	console.log(selectedCardShirt);
-}
+//     var elem = document.createElement('A');
+//     document.querySelector('.rules').appendChild(elem);
+//     elem.classList.add('card', 'card-shirt1');
+//     elem.setAttribute('data-select', 'yes');
 
-function chooseQuantity() {												//select the number of cards
-	document.querySelector("[data-quant = 'yes']").dataset.quant = "no";
-	event.target.dataset.quant = "yes";
-	selectedQuantity = document.querySelector("[data-quant = 'yes']").className;
-}
+//     var elem = document.createElement('A');
+//     document.querySelector('.rules').appendChild(elem);
+//     elem.classList.add('card', 'card-shirt2');
+//     elem.setAttribute('data-select', 'no');
 
-var acceptNumber = 1;
+//     var elem = document.createElement('A');
+//     document.querySelector('.rules').appendChild(elem);
+//     elem.classList.add('card', 'card-shirt3');
+//     elem.setAttribute('data-select', 'no');
 
-function acceptButton() {												
-	if (acceptNumber == 1) {
-		for (var i = 3; i > 0; i--) {
-			document.querySelector(".card").remove(".card");
-		}
-		createCardQuantity();											
-		acceptNumber++;
-	} else {
-		createGameStuff();												
-	}
-}
+//     var elem = document.createElement('DIV');
+//     document.querySelector('.rules').appendChild(elem);
+//     elem.classList.add('option-text');
+//     elem.innerHTML = "Choose style shirt for your cards";
 
-function createCardQuantity() {											//pick complexity
-	document.querySelector(".option-text").innerHTML = "Choose quantity of cards";
+//     var elem = document.createElement('A');
+//     document.querySelector('.rules').appendChild(elem);
+//     elem.classList.add('menu-btn', 'accept-btn');
+//     document.querySelector(".accept-btn").innerHTML = "ACCEPT";
+//     document.querySelector(".accept-btn").style.alignSelf = "flex-end";
+// }
 
-	var elem = document.createElement('A');
-	document.querySelector('.rules').insertBefore(elem, document.querySelector(".option-text"));
-	elem.classList.add('quantity', "quantity3");
-	elem.setAttribute('data-quant', 'no');
-	document.querySelector(".quantity3").innerHTML = "36";
+// var selectedCardShirt = 'card card-shirt1';
+// var selectedQuantity = 'quantity quantity1';
 
-	var elem = document.createElement('A');
-	document.querySelector('.rules').insertBefore(elem, document.querySelector(".option-text"));
-	elem.classList.add('quantity',"quantity2");
-	elem.setAttribute('data-quant', 'no');
-	document.querySelector(".quantity2").innerHTML = "24";
+// // function chooseCardShirt() {											//select the shirt of cards
+// //     document.querySelector("[data-select = 'yes']").dataset.select = "no";
+// //     event.target.dataset.select = "yes";
+// //     selectedCardShirt = document.querySelector("[data-select = 'yes']").className;
+// //     console.log(selectedCardShirt);
+// // }
 
-	var elem = document.createElement('A');
-	document.querySelector('.rules').insertBefore(elem, document.querySelector(".option-text"));
-	elem.classList.add('quantity','quantity1');
-	elem.setAttribute('data-quant', 'yes');
-	document.querySelector(".quantity1").innerHTML = "12";
-}
+// function chooseQuantity() {												//select the number of cards
+//     document.querySelector("[data-quant = 'yes']").dataset.quant = "no";
+//     event.target.dataset.quant = "yes";
+//     selectedQuantity = document.querySelector("[data-quant = 'yes']").className;
+// }
 
-function createGameStuff() {							
-	document.querySelector(".rules").innerHTML = " ";
-	document.querySelector(".rules").style.width = "80%";
+// var acceptNumber = 1;
 
-	switch (selectedQuantity) {
-		case 'quantity quantity2':
-			selectedQuantity = 24;
-			break;
+// function acceptButton() {
+//     if (acceptNumber == 1) {
+//         for (var i = 3; i > 0; i--) {
+//             document.querySelector(".card").remove(".card");
+//         }
+//         createCardsQuantity();
+//         acceptNumber++;
+//     } else {
+//         createGameStuff();
+//     }
+// }
 
-		case 'quantity quantity3':
-			selectedQuantity = 36;
-			break;
+// function createCardQuantity() {											//pick complexity
+//     document.querySelector(".option-text").innerHTML = "Choose quantity of cards";
 
-		default:
-			selectedQuantity = 12;
-			break;
-	}
+//     var elem = document.createElement('A');
+//     document.querySelector('.rules').insertBefore(elem, document.querySelector(".option-text"));
+//     elem.classList.add('quantity', "quantity3");
+//     elem.setAttribute('data-quant', 'no');
+//     document.querySelector(".quantity3").innerHTML = "36";
 
-	switch (selectedCardShirt) {
-		case 'card card-shirt2':
-			selectedCardShirt = 'card-shirt2';
-			break;
+//     var elem = document.createElement('A');
+//     document.querySelector('.rules').insertBefore(elem, document.querySelector(".option-text"));
+//     elem.classList.add('quantity', "quantity2");
+//     elem.setAttribute('data-quant', 'no');
+//     document.querySelector(".quantity2").innerHTML = "24";
 
-		case 'card card-shirt3':
-			selectedCardShirt = 'card-shirt3';
-			break;
+//     var elem = document.createElement('A');
+//     document.querySelector('.rules').insertBefore(elem, document.querySelector(".option-text"));
+//     elem.classList.add('quantity', 'quantity1');
+//     elem.setAttribute('data-quant', 'yes');
+//     document.querySelector(".quantity1").innerHTML = "12";
+// }
 
-		default:
-			selectedCardShirt = 'card-shirt1';
-			break;
-	}
+// function createGameStuff() {
+//     document.querySelector(".rules").innerHTML = " ";
+//     document.querySelector(".rules").style.width = "80%";
 
-	addCard();
-}
+//     switch (selectedQuantity) {
+//         case 'quantity quantity2':
+//             selectedQuantity = 24;
+//             break;
 
-function addCard() {								//create array of cards and random sort them
-													 
-	var cardsPack = [];								
+//         case 'quantity quantity3':
+//             selectedQuantity = 36;
+//             break;
 
-	for (var i = 0; i < selectedQuantity/3; i++) {
-		var elem = document.createElement('A');
-		elem.classList.add('card', 'card-flipside1');
-		cardsPack[i] = elem;
-	}
+//         default:
+//             selectedQuantity = 12;
+//             break;
+//     }
 
-	for (var i = 0; i < selectedQuantity/3; i++) {
-		var elem = document.createElement('A');
-		elem.classList.add('card','card-flipside2');
-		cardsPack[i+selectedQuantity/3] = elem;
-	}
+//     switch (selectedCardShirt) {
+//         case 'card card-shirt2':
+//             selectedCardShirt = 'card-shirt2';
+//             break;
 
-	for (var i = 0; i < selectedQuantity/3; i++) {
-		var elem = document.createElement('A');
-		elem.classList.add('card','card-flipside3');
-		cardsPack[i+selectedQuantity/3*2] = elem;
-	}
+//         case 'card card-shirt3':
+//             selectedCardShirt = 'card-shirt3';
+//             break;
 
-	cardsPack.sort(compareRandom);
+//         default:
+//             selectedCardShirt = 'card-shirt1';
+//             break;
+//     }
 
-		function compareRandom(a, b) {
-  			return Math.random() - 0.5;
-		}	
+//     addCard();
+// }
 
-	for (var i = 0; i < cardsPack.length; i++) {
-		var newWrapper = document.createElement('DIV');
-		document.querySelector('.rules').appendChild(newWrapper);
-		newWrapper.classList.add('wrapper', 'new-div');
-		elem = cardsPack[i];
-		document.querySelector('.new-div').appendChild(elem);
-		elem.style.position = "absolute";
-		elem = document.createElement('A');
-		document.querySelector('.new-div').appendChild(elem);
-		elem.classList.add('card', selectedCardShirt);
-		elem.setAttribute('data-flip', 'no');
-		elem.style.position = "absolute";
-		newWrapper.classList.remove('new-div');
-	}
-}
+// function addCard() {								//create array of cards and random sort them
 
-var a = 0;
+//     var cardsPack = [];
 
-var valueFlips = 0;
+//     for (var i = 0; i < selectedQuantity / 3; i++) {
+//         var elem = document.createElement('A');
+//         elem.classList.add('card', 'card-flipside1');
+//         cardsPack[i] = elem;
+//     }
 
-var firstCard;
-var secondCard;
+//     for (var i = 0; i < selectedQuantity / 3; i++) {
+//         var elem = document.createElement('A');
+//         elem.classList.add('card', 'card-flipside2');
+//         cardsPack[i + selectedQuantity / 3] = elem;
+//     }
 
-function flipCard() {								
-	switch (a) {
-		case 0:
-			event.target.parentNode.classList.add('flipped');
-			firstCard = event.target.parentNode.firstChild.classList;
-			a++;
-			valueFlips++;
-			break;
-		case 1:
-			event.target.parentNode.classList.add('flipped');
-			secondCard = event.target.parentNode.firstChild.classList;
-			a++;
-			setTimeout(checkValue,5000);
-			valueFlips++;
-			break;
-	}
-	
-}
+//     for (var i = 0; i < selectedQuantity / 3; i++) {
+//         var elem = document.createElement('A');
+//         elem.classList.add('card', 'card-flipside3');
+//         cardsPack[i + selectedQuantity / 3 * 2] = elem;
+//     }
 
-function checkValue() {								//check flipside of cards
-	if (firstCard.value == secondCard.value) {
-		document.querySelector(".flipped").innerHTML = " ";
-		document.querySelector('.flipped').classList.remove('flipped');
-		document.querySelector(".flipped").innerHTML = " ";
-		document.querySelector('.flipped').classList.remove('flipped');
-		searchCards();
-	a = 0;
-	} else {
-		document.querySelector('.flipped').classList.remove('flipped');
-		document.querySelector('.flipped').classList.remove('flipped');
-		a = 0;
-	}
-}
+//     cardsPack.sort(compareRandom);
 
-function searchCards() {							//add records
-	var searchCards = document.querySelectorAll('.card').length;
-	if (searchCards == 0) {
-		playerScore = Math.round(100*selectedQuantity/valueFlips);
-		localStorage.setItem('player', playerName);
-		localStorage.setItem('playerRecords', playerScore);
-	}
-}
+//     function compareRandom(a, b) {
+//         return Math.random() - 0.5;
+//     }
+
+//     for (var i = 0; i < cardsPack.length; i++) {
+//         var newWrapper = document.createElement('DIV');
+//         document.querySelector('.rules').appendChild(newWrapper);
+//         newWrapper.classList.add('wrapper', 'new-div');
+//         elem = cardsPack[i];
+//         document.querySelector('.new-div').appendChild(elem);
+//         elem.style.position = "absolute";
+//         elem = document.createElement('A');
+//         document.querySelector('.new-div').appendChild(elem);
+//         elem.classList.add('card', selectedCardShirt);
+//         elem.setAttribute('data-flip', 'no');
+//         elem.style.position = "absolute";
+//         newWrapper.classList.remove('new-div');
+//     }
+// }
+
+// var a = 0;
+
+// var valueFlips = 0;
+
+// var firstCard;
+// var secondCard;
+
+// function flipCard() {
+//     switch (a) {
+//         case 0:
+//             event.target.parentNode.classList.add('flipped');
+//             firstCard = event.target.parentNode.firstChild.classList;
+//             a++;
+//             valueFlips++;
+//             break;
+//         case 1:
+//             event.target.parentNode.classList.add('flipped');
+//             secondCard = event.target.parentNode.firstChild.classList;
+//             a++;
+//             setTimeout(checkValue, 5000);
+//             valueFlips++;
+//             break;
+//     }
+
+// }
+
+// function checkValue() {								//check flipside of cards
+//     if (firstCard.value == secondCard.value) {
+//         document.querySelector(".flipped").innerHTML = " ";
+//         document.querySelector('.flipped').classList.remove('flipped');
+//         document.querySelector(".flipped").innerHTML = " ";
+//         document.querySelector('.flipped').classList.remove('flipped');
+//         searchCards();
+//         a = 0;
+//     } else {
+//         document.querySelector('.flipped').classList.remove('flipped');
+//         document.querySelector('.flipped').classList.remove('flipped');
+//         a = 0;
+//     }
+// }
+
+// function searchCards() {							//add records
+//     var searchCards = document.querySelectorAll('.card').length;
+//     if (searchCards == 0) {
+//         playerScore = Math.round(100 * selectedQuantity / valueFlips);
+//         localStorage.setItem('player', playerName);
+//         localStorage.setItem('playerRecords', playerScore);
+//     }
+// }
