@@ -1,6 +1,5 @@
 * {
 	font-family: "world fair", 'Arial', non-serif;
-	/* font-size: 14px; */
 }
 
 body {
@@ -27,11 +26,15 @@ main {
 
 header {
 	min-height: 100px;
-	width: 800px;
+	width: 90%;
 	margin: 0 auto;
 	display: flex;
 	justify-content: space-between;
 	align-items: center;
+}
+
+#player-score, #player-name {
+	display: none;
 }
 
 .menu-btn {
@@ -260,6 +263,15 @@ main .rules {
 	display: block;
 }
 
+.card.quantity {
+	font-size: 100px;
+  justify-content: center;
+  align-items: center;
+	display: flex;
+	
+	background: rgb(255,255,255,1);
+}
+
 .card:hover {
 	box-shadow: 0 0 2px 2px red;
 	cursor: pointer;
@@ -267,35 +279,26 @@ main .rules {
 
 .card-shirt3 {
 	background: url('../img/cardback1.png') center;
-	z-index: 2;
-	backface-visibility: hidden;
 }
 
 .card-shirt1 {
 	background: url('../img/cardback2.png') center;
-	z-index: 2;
-	backface-visibility: hidden;
 }
 
 .card-shirt2 {
 	background: url('../img/cardback3.png') center;
-	z-index: 2;
-	backface-visibility: hidden;
 }
 
-.card-flipside1 {
+.cardback1 {
 	background: url('../img/garrosh.png') center;
-	z-index: 1;
 }
 
-.card-flipside2 {
+.cardback2 {
 	background: url('../img/sylvana.jpg') center;
-	z-index: 1;
 }
 
-.card-flipside3 {
+.cardback3 {
 	background: url('../img/lich.jpg') center;
-	z-index: 1;
 }
 
 .option-text {
