@@ -21,8 +21,8 @@ body {
 }
 
 main {
-	margin: 0 auto;
-	display: flex;
+  display: flex;
+  justify-content: center;
 }
 
 header {
@@ -117,11 +117,6 @@ main .records-table {
 
 .records-table .close-records-btn {
 	flex: 0 0 auto;
-}
-
-.main-flexbox {
-	flex-wrap: wrap;
-	justify-content: space-between;
 }
 
 .new-game {
@@ -245,17 +240,25 @@ main .rules {
 	font-size: 45px;
 }
 
+#game-board {
+  width: 80%;
+  background: rgb(255,255,255,0.6);
+	border: 1px solid black;
+	border-radius: 10px;
+  display: none;
+  flex-wrap: wrap;
+}
+
 .card {
 	height: 340px;
 	width: 230px;
 	border: 2px solid black;
 	border-radius: 10px;
 	display: block;
-  margin-bottom: 20px;
-  margin-right: 20px;
+  margin: 20px;
 }
 
-.card:hover, .quantity:hover {
+.card:hover {
 	box-shadow: 0 0 2px 2px red;
 	cursor: pointer;
 }
@@ -293,15 +296,6 @@ main .rules {
 	z-index: 1;
 }
 
-.wrapper {
-	width: 230px;
-	height: 340px;
-	margin-bottom: 20px;
-
-	transition: 3s;
-	transform-style: preserve-3d;
-}
-
 .option-text {
 	display: flex;
 	align-items: center;
@@ -309,30 +303,10 @@ main .rules {
 }
 
 .quantity {
-	width: 200px;
-	height: 200px;
-	margin-bottom: 20px;
-	
-	background: url('../img/pack.png') center;
-	border: 2px solid black;
-	border-radius: 10px;
 
-	font-size: 80px;
-
-	display: flex;
-	justify-content: center;
-	align-items:flex-end;
-}
-
-[data-select='yes'], [data-quant='yes'] {
-	box-shadow:  0 0 4px 4px yellow;
 }
 
 @font-face {
   font-family: "World Fair";
   src: url("../fonts/worldfair.ttf") format("truetype");
-}
-
-.flipped {
-	transform: rotateY(180deg);
 }
