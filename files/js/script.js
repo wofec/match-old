@@ -3,8 +3,10 @@ const gameElements = {
   modal: document.querySelector('#modal'),
   disabled: document.querySelector("#disabled"),
   newGameButton: document.querySelector("#new-game-button"),
+  reloadButton: document.querySelector("#reload-button"),
   acceptButton: document.querySelector("#accept-button"),
   closeButton: document.querySelector("#close-button"),
+  recordsButton: document.querySelector("#records-button"),
   loginWrapper: document.querySelector("#login-wrapper"),
   nameInput: document.querySelector("#login"),
   modalHeader: document.querySelector("#modal-header"),
@@ -13,23 +15,30 @@ const gameElements = {
   gameRules: document.querySelector("#rules"),
   playerName: document.querySelector("#player-name"),
   playerScore: document.querySelector("#player-score"),
+  recordsTableContent: document.querySelector("#records-table-content"),
+  recordsTable: document.querySelector("#records-table"),
+  closeRecordsButton: document.querySelector("#close-records-button"),
+  logOutButton: document.querySelector("#log-out"),
 }
 
-const GAME_STATE_PREPARE = 'GAME_STATE_PREPARE';
 const GAME_STATE_LOGIN = 'GAME_STATE_LOGIN';
 const GAME_STATE_NONE = 'GAME_STATE_NONE';
 const GAME_STATE_CHOOSE_CARD_SHIRT = 'GAME_STATE_CHOOSE_CARD_SHIRT';
 const GAME_STATE_CHOOSE_DIFFICULT = 'GAME_STATE_CHOOSE_DIFFICULT';
 const GAME_STATE_IN_PROGRESS = 'GAME_STATE_IN_PROGRESS';
+const GAME_STATE_FINISH = 'GAME_STATE_FINISH';
 
 const cardShirts = ['card-shirt1', 'card-shirt2', 'card-shirt3'];
 const cardsBack = ['cardback1', 'cardback2', 'cardback3'];
-const cardsQuantity = [9, 18, 30];
+const cardsQuantity = [6, 18, 30];
 
 const headerMessages = {
   loginStage: 'Введите ваше имя',
   cardShirtStage: 'Выберите рубашку карточек',
   cardsQuantityStage: 'Выберите количество карточек',
+  reloadMessage: 'Вы уверены что хотите начать новую игру ? Весь прогресс будет потерян',
+  winMessage: 'Вы победили!!! Хотите начать новую игру ?',
+  logoutMessage: 'Вы уверены что хотите сменить имя ? Весь прогресс будет потерян',
 }
 
 const gameData = {
@@ -43,22 +52,27 @@ const gameData = {
   controller: null,
   gameScore: 0,
   updateScore: null,
+  renderRecords: true,
 }
 
 // init block
 gameElements.newGameButton.addEventListener("click", actionController);
 gameElements.acceptButton.addEventListener("click", actionController);
 gameElements.closeButton.addEventListener("click", hideModal);
+gameElements.recordsButton.addEventListener("click", openRecords);
+gameElements.closeRecordsButton.addEventListener("click", closeRecords);
+gameElements.reloadButton.addEventListener("click", reloadGame);
+gameElements.logOutButton.addEventListener("click", showLogOutModal);
 
 function checkPlayer() {
   if (gameData.player.name) {
+    activateUserBar();
     chooseCardShirt();
   } else {
     gameData.gameState = GAME_STATE_LOGIN;
     regNewPlayer();
   }
   showModal();
-  activateUserBar();
 }
 
 function showModal() {
@@ -69,11 +83,24 @@ function showModal() {
 function hideModal() {
   disabled.style.display = "none";
   modal.style.display = "none";
-  gameData.gameState = GAME_STATE_NONE;
   gameElements.modalContent.innerHTML = '';
+  if (gameData.gameState !== GAME_STATE_IN_PROGRESS) {
+    gameData.gameState = GAME_STATE_NONE;
+  }
 }
-
+//управление кнопками в зависимости от состояния приложухи запускает нужный скрипт
 function actionController({target}) {
+  //пара костылей для перезапуска и смены юзера
+  if (target.id === 'new-game-button' && gameData.gameState === GAME_STATE_IN_PROGRESS) {
+    showReloadModal();
+    return;
+  } else if (gameData.logOut) {
+    gameData.logOut = false;
+    gameData.player = {};
+    //
+    reloadGame();
+  }
+  //
   switch(gameData.gameState){
     case GAME_STATE_NONE: {
       checkPlayer();
@@ -119,6 +146,7 @@ function loginUser() {
   }
   localStorage.setItem('mmg_player', name);
   gameData.player.name = name;
+  activateUserBar();
   chooseCardShirt();
 }
 
@@ -127,6 +155,7 @@ function activateUserBar() {
   gameElements.playerName.innerHTML = gameData.player.name;
   gameElements.playerScore.style.display = 'flex';
   gameElements.playerScore.innerHTML = 'Score: 0';
+  gameElements.logOutButton.style.display = 'flex';
 }
 
 function chooseCardShirt() {
@@ -183,12 +212,15 @@ function renderContent() {
       })
     );
   });
+  
+  activateUserBar();
 }
 
 function generateCard(options) {
   const template = `<div class="card ${options.extraClass}" data-id="${options.id}">${options.quantity || ''}</div>`;
   const card = document.createElement('div');
   card.innerHTML = template;
+  card.classList.add('card-wrapper');
   card.addEventListener('click', actionController);
   return card;
 }
@@ -253,6 +285,10 @@ function gameController() {
       comparedObjects.needRefresh = true;
       gameData.updateScore();
     }
+
+    if (!gameData.cardBackArr.length) {
+      finishGame();
+    }
   }
 
   function refreshCards() {
@@ -266,6 +302,12 @@ function gameController() {
     comparedObjects.first = null;
     comparedObjects.second = null;
     comparedObjects.needRefresh = false;
+  }
+
+  function finishGame() {
+    gameData.gameState = GAME_STATE_FINISH;
+    saveRecord();
+    showReloadModal();
   }
 
   return checkCardValue;
@@ -319,19 +361,81 @@ function computeScore() {
 
 function saveRecord() {
   let records = localStorage.getItem('mmg_records');
+  const points = {
+    name: gameData.player.name, 
+    score: gameData.gameScore,
+  }
   if (records) {
-    points = JSON.stringify({
-        name: gameData.player.name, 
-        score: gameData.score
-      });
     records = JSON.parse(records);
     records.push(points);
-    localStorage.setItem('mmg_records', records)
+    records = JSON.stringify(records);
+    localStorage.setItem('mmg_records', records);
   } else {
-    records = JSON.stringify([{
-      name: gameData.player.name, 
-      score: gameData.score
-    }]);
-    localStorage.setItem('mmg_records', records)
+    records = JSON.stringify([points]);
+    localStorage.setItem('mmg_records', records);
   }
+  gameData.renderRecords = true;
 }
+
+function openRecords() {
+  gameElements.recordsTable.style.display = 'flex';
+  gameElements.disabled.style.display = 'block';
+  if (gameData.renderRecords) {
+    gameData.renderRecords = false;
+    renderRecords();
+  };
+}
+
+function closeRecords() {
+  gameElements.recordsTable.style.display = 'none';
+  gameElements.disabled.style.display = 'none';
+}
+
+function renderRecords() {
+  let records = localStorage.getItem('mmg_records');
+  if (records) {
+    records = JSON.parse(records);
+    gameElements.recordsTableContent.innerHTML = '';
+    records.forEach((item) => {
+      const template = `<div>${item.name}</div><div>${item.score}</div>`;
+      const elem = document.createElement('div');
+      elem.innerHTML = template;
+      elem.classList.add('record');
+      gameElements.recordsTableContent.appendChild(elem);
+    });
+  } 
+};
+
+function showReloadModal() {
+  disabled.style.display = "block";
+  modal.style.display = "flex";
+  if (gameData.gameState === GAME_STATE_FINISH) {
+    gameElements.modalHeader.innerHTML = headerMessages.winMessage;
+  } else {
+    gameElements.modalHeader.innerHTML = headerMessages.reloadMessage;
+  }
+  gameElements.reloadButton.style.display = 'flex';
+}
+
+function showLogOutModal() {
+  disabled.style.display = "block";
+  modal.style.display = "flex";
+  gameElements.modalHeader.innerHTML = headerMessages.logoutMessage;
+  gameElements.acceptButton.style.display = 'flex';
+  gameData.logOut = true;
+}
+
+function reloadGame() {
+  gameData.gameState = GAME_STATE_NONE;
+  gameData.cardShirt = null;
+  gameData.cardsQuantity = null;
+  gameData.cardBackArr = [];
+  gameData.updateScore = null;
+  gameData.renderRecords = true;
+  gameElements.gameRules.style.display = 'block';
+  gameElements.gameBoard.innerHTML = '';
+  gameElements.gameBoard.style.display = 'none';
+  gameElements.reloadButton.style.display = 'none';
+  checkPlayer();
+}
+
