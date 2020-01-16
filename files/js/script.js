@@ -89,6 +89,7 @@ function actionController({target}) {
     }
 
     case GAME_STATE_IN_PROGRESS: {
+      checkCardValue();
       break;
     }
 
@@ -174,18 +175,24 @@ function generateCard(options) {
 }
 
 function generateUniqId() {
-  return `mmg${(~~(Math.random()*1e8)).toString(16)}`;
+  return `mmg${(Math.floor(Math.random()*1e8)).toString(16)}`;
 }
 
 function gameController() {
   const cardsInfo = {};
+  const comparedObjects = {};
 
   function getInfo(id) {
-    return cardsInfo[id] || generateInfo(id);
+    cardsInfo[id] || generateInfo(id);
+    return cardsInfo[id];
   }
 
   function generateInfo(id) {
-    cardsInfo[id] = info;
+    cardsInfo[id] = gameData.cardBackArr.splice(Math.floor(Math.random() * gameData.cardBackArr.length));
+  }
+
+  function compareIt() {
+
   }
 
   return getInfo;
